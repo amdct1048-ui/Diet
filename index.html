@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>다이어트 트래커</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f0f4f8;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:440px;margin:0 auto;padding-bottom:90px;}
+input,button,textarea,select{font-family:inherit;}
+.hide{display:none!important;}
+/* 헤더 */
+#header{padding:20px 16px 0;display:flex;justify-content:space-between;align-items:center;}
+#header h1{font-size:20px;font-weight:800;color:#2d3f52;}
+#header p{font-size:12px;color:#7a93a8;margin-top:2px;}
+/* 탭 */
+#tabbar{display:flex;background:#e8eef4;border-radius:11px;padding:3px;gap:2px;margin:13px 16px 0;}
+.tbtn{flex:1;padding:8px 0;border:none;border-radius:9px;font-size:10px;font-weight:500;color:#7a93a8;background:transparent;cursor:pointer;}
+.tbtn.on{background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;font-weight:700;}
+/* 페이지 */
+.page{padding:14px 16px 0;display:none;}
+.page.on{display:block;}
+/* 카드 */
+.card{background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 2px 14px rgba(100,130,160,.08);margin-bottom:13px;}
+.lbl{font-size:10px;font-weight:700;color:#a8bfcc;letter-spacing:1.2px;margin-bottom:10px;text-transform:uppercase;}
+/* 입력 */
+.inp{padding:10px 12px;border-radius:10px;border:1.5px solid #dce7f0;font-size:14px;outline:none;color:#2d3f52;background:#fafcff;}
+.inp:focus{border-color:#7c9cbf;}
+.row{display:flex;gap:8px;align-items:center;}
+/* 버튼 */
+.btn{border:none;border-radius:10px;font-weight:700;cursor:pointer;padding:10px 16px;color:#fff;font-size:14px;}
+.btn-g{background:linear-gradient(135deg,#7c9cbf,#9b87c4);}
+.btn-b{background:#7c9cbf;}
+.btn-o{background:#c4826a;}
+.btn-gray{background:#eef3f8;color:#7a93a8;}
+/* 목표 카드 */
+.goal-card{background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;border-radius:18px;padding:24px 20px;margin-bottom:13px;}
+.prog-bar{background:rgba(255,255,255,.25);border-radius:8px;height:7px;overflow:hidden;margin-top:14px;}
+.prog-fill{height:100%;background:#fff;border-radius:8px;}
+/* 2컬럼 */
+.cols2{display:flex;gap:12px;margin-bottom:13px;}
+.cols2 .card{flex:1;margin-bottom:0;}
+/* 원형 */
+.circ{position:relative;}
+.circ-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+/* 체크 */
+.chk-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #dce7f0;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+.chkbox{width:22px;height:22px;border-radius:7px;border:2px solid #dce7f0;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-weight:700;font-size:13px;}
+.chkbox.on{background:#7c9cbf;border-color:#7c9cbf;}
+.chktxt{font-size:14px;color:#2d3f52;flex:1;}
+.chktxt.on{color:#a8bfcc;text-decoration:line-through;}
+/* 주간바 */
+.wbars{display:flex;gap:5px;}
+.wbar{flex:1;text-align:center;}
+.wbar-bg{height:44px;border-radius:8px;background:#eef3f8;position:relative;overflow:hidden;border:2px solid transparent;}
+.wbar-bg.today{border-color:#7c9cbf;}
+.wbar-fill{position:absolute;bottom:0;left:0;right:0;background:#b8d0e8;}
+.wbar-fill.full{background:#7c9cbf;}
+/* 기록 */
+.rec-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f4f8;}
+.rm{background:none;border:none;color:#a8bfcc;font-size:18px;padding:0 4px;cursor:pointer;}
+/* 식단 섹션 */
+.meal-sec{margin-bottom:12px;}
+.meal-sec-hdr{font-size:12px;font-weight:700;color:#7c9cbf;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+/* 기분 버튼 */
+.mood-row{display:flex;gap:10px;margin-top:8px;}
+.mood-btn{flex:1;padding:10px 0;border:2px solid #dce7f0;border-radius:12px;background:#fff;font-size:22px;cursor:pointer;transition:all .15s;}
+.mood-btn.on{border-color:#7c9cbf;background:#f0f5fb;}
+/* 날짜 선택 */
+.date-sel{padding:8px 12px;border-radius:10px;border:1.5px solid #dce7f0;font-size:13px;outline:none;color:#2d3f52;background:#fafcff;font-weight:600;}
+/* 리포트 캘린더 */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{border-radius:10px;padding:7px 3px;background:#f8fafc;border:2px solid transparent;min-height:64px;display:flex;flex-direction:column;align-items:center;cursor:pointer;}
+.cal-cell:active{opacity:.7;}
+.cal-cell.istoday{border-color:#7c9cbf;background:linear-gradient(135deg,#7c9cbf18,#9b87c418);}
+.cal-cell.future{opacity:.35;}
+.cal-cell.hasdata{background:#f0f5fb;}
+.cal-cell.selected{border-color:#9b87c4;box-shadow:0 0 0 2px #9b87c430;}
+/* 상세보기 */
+.detail-box{background:#f8fafc;border-radius:14px;padding:14px;margin-top:12px;border:1.5px solid #dce7f0;}
+.detail-tag{display:inline-block;font-size:11px;border-radius:6px;padding:3px 8px;font-weight:600;margin:2px 2px;}
+/* 통계 */
+.stats3{display:flex;gap:10px;}
+.sbox{flex:1;background:#f0f4f8;border-radius:12px;padding:11px 8px;text-align:center;}
+/* 셋업 */
+#setup-screen{min-height:100vh;background:#f0f4f8;display:flex;align-items:center;justify-content:center;padding:20px;}
+.setup-box{background:#fff;border-radius:24px;padding:36px 26px;width:100%;max-width:400px;box-shadow:0 4px 28px rgba(100,130,160,.12);}
+/* textarea */
+.txta{width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #dce7f0;font-size:14px;outline:none;color:#2d3f52;background:#fafcff;resize:none;line-height:1.5;}
+.txta:focus{border-color:#7c9cbf;}
+/* 백업 */
+.backup-box{background:#f8fafc;border-radius:12px;padding:14px;font-size:12px;color:#2d3f52;line-height:1.8;font-family:monospace;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;border:1.5px solid #dce7f0;}
+
+/* ── 식재료 탭 ── */
+.food-search-wrap{position:relative;margin-bottom:10px;}
+.food-search-wrap input{width:100%;padding-right:36px;}
+.food-search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#a8bfcc;font-size:18px;cursor:pointer;line-height:1;}
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.cat-tab{padding:5px 12px;border-radius:20px;border:1.5px solid #dce7f0;background:#fff;font-size:12px;font-weight:600;color:#7a93a8;cursor:pointer;}
+.cat-tab.on{background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;border-color:transparent;}
+.food-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f4f8;}
+.food-item-left{flex:1;}
+.food-item-name{font-size:14px;font-weight:600;color:#2d3f52;}
+.food-item-meta{font-size:11px;color:#a8bfcc;margin-top:2px;}
+.food-item-cal{font-size:15px;font-weight:800;color:#9b87c4;font-family:monospace;margin-right:8px;}
+.food-item-btns{display:flex;align-items:center;gap:4px;}
+.food-add-btn{background:linear-gradient(135deg,#7c9cbf,#9b87c4);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;cursor:pointer;}
+.food-rm-btn{background:none;border:none;color:#dce7f0;font-size:18px;cursor:pointer;padding:0 2px;}
+.food-rm-btn:hover{color:#c4748a;}
+.add-food-form{background:#f8fafc;border-radius:14px;padding:14px;border:1.5px solid #dce7f0;margin-bottom:12px;}
+.add-food-form .lbl{margin-bottom:8px;}
+.food-unit-row{display:flex;gap:6px;margin-bottom:8px;}
+.food-unit-row input{flex:1;}
+.food-unit-row select{padding:10px 8px;border-radius:10px;border:1.5px solid #dce7f0;font-size:13px;outline:none;color:#2d3f52;background:#fafcff;}
+/* 식재료 불러오기 팝업 */
+.food-picker-overlay{position:fixed;inset:0;background:rgba(45,63,82,.35);z-index:100;display:flex;align-items:flex-end;justify-content:center;}
+.food-picker-sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:440px;padding:20px 16px 36px;max-height:80vh;overflow-y:auto;}
+.food-picker-sheet h3{font-size:15px;font-weight:800;color:#2d3f52;margin-bottom:12px;}
+.pick-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f4f8;cursor:pointer;}
+.pick-item:active{background:#f0f5fb;}
+.pick-name{font-size:14px;font-weight:600;color:#2d3f52;}
+.pick-cal{font-size:13px;font-weight:700;color:#9b87c4;font-family:monospace;}
+.pick-unit{font-size:11px;color:#a8bfcc;margin-left:4px;}
+</style>
+</head>
+<body>
+
+<!-- 셋업 -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div style="font-size:24px;font-weight:800;color:#2d3f52;margin-bottom:4px">목표 설정</div>
+    <div style="font-size:13px;color:#7a93a8;margin-bottom:22px">다이어트 목표와 필수 규칙을 입력해주세요</div>
+    <div style="font-size:11px;font-weight:700;color:#7a93a8;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase">몸무게 & 기간</div>
+    <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:5px">시작 몸무게 (kg)</div>
+    <input class="inp" id="f-sw" type="number" placeholder="예: 72.0" style="width:100%;margin-bottom:12px"/>
+    <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:5px">목표 몸무게 (kg)</div>
+    <input class="inp" id="f-tw" type="number" placeholder="예: 65.0" style="width:100%;margin-bottom:12px"/>
+    <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:5px">시작 날짜</div>
+    <input class="inp" id="f-sd" type="date" style="width:100%;margin-bottom:12px"/>
+    <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:5px">목표 날짜</div>
+    <input class="inp" id="f-ed" type="date" style="width:100%;margin-bottom:18px"/>
+    <div style="font-size:11px;font-weight:700;color:#7a93a8;letter-spacing:1px;margin-bottom:12px;text-transform:uppercase">꼭 지켜야 할 규칙 3가지</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+      <input class="inp" id="f-r1" value="주 3회 이상 운동하기" style="flex:1"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+      <input class="inp" id="f-r2" value="클린 식단 유지하기" style="flex:1"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#7c9cbf,#9b87c4);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+      <input class="inp" id="f-r3" value="밤 10시 이후 금식하기" style="flex:1"/>
+    </div>
+    <button class="btn btn-g" style="width:100%;padding:14px;font-size:15px" onclick="startApp()">시작하기 →</button>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app-screen" class="hide">
+  <div id="header">
+    <div><h1>다이어트 트래커</h1><p id="hdr-date"></p></div>
+    <div style="font-size:10px;color:#a8bfcc">💾 자동저장</div>
+  </div>
+  <div id="tabbar">
+    <button class="tbtn on" onclick="goTab(0)">홈</button>
+    <button class="tbtn" onclick="goTab(1)">체크</button>
+    <button class="tbtn" onclick="goTab(2)">기록</button>
+    <button class="tbtn" onclick="goTab(3)">식재료</button>
+    <button class="tbtn" onclick="goTab(4)">리포트</button>
+    <button class="tbtn" onclick="goTab(5)">백업</button>
+  </div>
+
+  <!-- 홈 -->
+  <div class="page on" id="p0">
+    <div class="goal-card" id="goal-card"></div>
+    <div class="cols2">
+      <div class="card"><div class="lbl">오늘 몸무게</div><div style="font-size:22px;font-weight:800;color:#2d3f52;font-family:monospace" id="h-w">—<span style="font-size:12px;font-weight:500;color:#7a93a8"> kg</span></div><div id="h-wdiff" style="font-size:12px;margin-top:3px;font-weight:600"></div></div>
+      <div class="card"><div class="lbl">오늘 칼로리</div><div style="font-size:22px;font-weight:800;color:#2d3f52;font-family:monospace" id="h-cal">0<span style="font-size:12px;font-weight:500;color:#7a93a8"> kcal</span></div></div>
+    </div>
+    <div class="card">
+      <div class="lbl">오늘 체크리스트</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="circ" style="width:82px;height:82px;flex-shrink:0">
+          <svg width="82" height="82" style="transform:rotate(-90deg)"><circle cx="41" cy="41" r="34" fill="none" stroke="#dce7f0" stroke-width="7"/><circle id="cc" cx="41" cy="41" r="34" fill="none" stroke="#7c9cbf" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 214"/></svg>
+          <div class="circ-in"><span style="font-size:16px;font-weight:700;color:#2d3f52;font-family:monospace" id="cpct">0%</span><span style="font-size:9px;color:#7a93a8;margin-top:1px">달성</span></div>
+        </div>
+        <div><div style="font-size:20px;font-weight:800;color:#2d3f52" id="ccnt">0/0</div><div style="font-size:12px;color:#7a93a8;margin-top:3px">항목 완료</div><div id="call" style="font-size:11px;color:#6baa9f;font-weight:700;margin-top:4px"></div></div>
+      </div>
+    </div>
+    <div class="card hide" id="wchart-card">
+      <div class="lbl">몸무게 추이</div>
+      <div style="overflow-x:auto"><svg id="wchart" height="110" style="overflow:visible"></svg></div>
+    </div>
+    <div class="card">
+      <div class="lbl">기간 진행</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="circ" style="width:82px;height:82px;flex-shrink:0">
+          <svg width="82" height="82" style="transform:rotate(-90deg)"><circle cx="41" cy="41" r="34" fill="none" stroke="#dce7f0" stroke-width="7"/><circle id="dc" cx="41" cy="41" r="34" fill="none" stroke="#9b87c4" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 214"/></svg>
+          <div class="circ-in"><span style="font-size:16px;font-weight:700;color:#2d3f52;font-family:monospace" id="dpct">0%</span><span style="font-size:9px;color:#7a93a8;margin-top:1px">진행</span></div>
+        </div>
+        <div><div style="font-size:20px;font-weight:800;color:#2d3f52" id="dcnt">D+0</div><div style="font-size:12px;color:#7a93a8;margin-top:3px" id="dtotal"></div><div style="font-size:11px;color:#9b87c4;font-weight:700;margin-top:4px" id="drem"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 체크리스트 -->
+  <div class="page" id="p1">
+    <div class="card" style="padding:14px 18px">
+      <div class="lbl">체크 날짜 선택</div>
+      <input type="date" class="date-sel" id="chk-date" style="width:100%"/>
+    </div>
+    <div class="card">
+      <div class="lbl" id="chk-lbl">오늘 체크</div>
+      <div id="chk-list"></div>
+      <div style="margin-top:10px;text-align:right"><span style="font-size:13px;color:#7c9cbf;font-weight:700" id="chk-done"></span></div>
+    </div>
+    <div class="card">
+      <div class="lbl">이번 주 달성 현황</div>
+      <div class="wbars" id="wbars"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">항목 관리</div>
+      <div id="item-list"></div>
+      <div class="row" style="margin-top:12px">
+        <input class="inp" id="new-inp" placeholder="새 항목 추가..." style="flex:1"/>
+        <button class="btn btn-g" onclick="addItem()" style="padding:10px 16px;font-size:16px">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기록 -->
+  <div class="page" id="p2">
+    <div class="card" style="padding:14px 18px">
+      <div class="lbl">기록 날짜 선택</div>
+      <input type="date" class="date-sel" id="rec-date" style="width:100%"/>
+    </div>
+    <div class="card">
+      <div class="lbl">몸무게</div>
+      <div class="row">
+        <input class="inp" id="w-inp" type="number" placeholder="몸무게 (kg)" style="flex:1"/>
+        <button class="btn btn-b" onclick="saveW()">저장</button>
+      </div>
+      <div id="w-saved" style="font-size:12px;color:#6baa9f;margin-top:8px;font-weight:600"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">식단 기록</div>
+      <div class="meal-sec">
+        <div class="meal-sec-hdr">🌅 아침</div>
+        <div class="row" style="gap:6px">
+          <input class="inp" id="m-breakfast" placeholder="메뉴 (예: 샐러드, 계란)" style="flex:3"/>
+          <input class="inp" id="mc-breakfast" type="number" placeholder="kcal" style="flex:1;min-width:0"/>
+          <button class="btn btn-g" onclick="addMeal('breakfast')" style="padding:10px 12px;font-size:15px;flex-shrink:0">+</button>
+        </div>
+        <button class="btn btn-gray" style="font-size:11px;padding:6px 10px;margin-top:6px;width:100%" onclick="openFoodPicker('breakfast')">📋 식재료에서 불러오기</button>
+        <div id="meal-breakfast"></div>
+      </div>
+      <div class="meal-sec">
+        <div class="meal-sec-hdr">☀️ 점심</div>
+        <div class="row" style="gap:6px">
+          <input class="inp" id="m-lunch" placeholder="메뉴" style="flex:3"/>
+          <input class="inp" id="mc-lunch" type="number" placeholder="kcal" style="flex:1;min-width:0"/>
+          <button class="btn btn-g" onclick="addMeal('lunch')" style="padding:10px 12px;font-size:15px;flex-shrink:0">+</button>
+        </div>
+        <button class="btn btn-gray" style="font-size:11px;padding:6px 10px;margin-top:6px;width:100%" onclick="openFoodPicker('lunch')">📋 식재료에서 불러오기</button>
+        <div id="meal-lunch"></div>
+      </div>
+      <div class="meal-sec">
+        <div class="meal-sec-hdr">🌙 저녁</div>
+        <div class="row" style="gap:6px">
+          <input class="inp" id="m-dinner" placeholder="메뉴" style="flex:3"/>
+          <input class="inp" id="mc-dinner" type="number" placeholder="kcal" style="flex:1;min-width:0"/>
+          <button class="btn btn-g" onclick="addMeal('dinner')" style="padding:10px 12px;font-size:15px;flex-shrink:0">+</button>
+        </div>
+        <button class="btn btn-gray" style="font-size:11px;padding:6px 10px;margin-top:6px;width:100%" onclick="openFoodPicker('dinner')">📋 식재료에서 불러오기</button>
+        <div id="meal-dinner"></div>
+      </div>
+      <div class="meal-sec">
+        <div class="meal-sec-hdr">🍬 간식</div>
+        <div class="row" style="gap:6px">
+          <input class="inp" id="m-snack" placeholder="메뉴" style="flex:3"/>
+          <input class="inp" id="mc-snack" type="number" placeholder="kcal" style="flex:1;min-width:0"/>
+          <button class="btn btn-g" onclick="addMeal('snack')" style="padding:10px 12px;font-size:15px;flex-shrink:0">+</button>
+        </div>
+        <button class="btn btn-gray" style="font-size:11px;padding:6px 10px;margin-top:6px;width:100%" onclick="openFoodPicker('snack')">📋 식재료에서 불러오기</button>
+        <div id="meal-snack"></div>
+      </div>
+      <div style="background:#f0f5fb;border-radius:10px;padding:10px 14px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;color:#7a93a8;font-weight:600">하루 총 칼로리</span>
+          <span style="font-size:16px;font-weight:800;color:#9b87c4;font-family:monospace" id="total-cal">0 kcal</span>
+        </div>
+        <div style="font-size:11px;color:#a8bfcc;margin-bottom:6px">직접 수정하려면 아래에 입력</div>
+        <div class="row" style="gap:6px">
+          <input class="inp" id="manual-cal" type="number" placeholder="총 칼로리 직접 입력 (kcal)" style="flex:1;font-size:13px"/>
+          <button class="btn btn-b" onclick="saveManualCal()" style="padding:9px 14px;font-size:13px">저장</button>
+          <button class="btn btn-gray" onclick="clearManualCal()" style="padding:9px 10px;font-size:12px">초기화</button>
+        </div>
+        <div id="manual-cal-saved" style="font-size:11px;color:#6baa9f;margin-top:6px;font-weight:600"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">운동 기록</div>
+      <div class="row" style="gap:6px;margin-bottom:10px">
+        <input class="inp" id="en" placeholder="운동 이름" style="flex:1"/>
+        <input class="inp" id="em" type="number" placeholder="분" style="width:60px;flex-shrink:0"/>
+        <button class="btn btn-o" onclick="addEx()" style="padding:10px 14px;font-size:15px;flex-shrink:0">+</button>
+      </div>
+      <div id="ex-list"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">오늘의 기분</div>
+      <div class="mood-row" id="mood-btns">
+        <button class="mood-btn" onclick="setMood('😭')" id="mood-😭">😭</button>
+        <button class="mood-btn" onclick="setMood('🙂')" id="mood-🙂">🙂</button>
+        <button class="mood-btn" onclick="setMood('🤗')" id="mood-🤗">🤗</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">메모</div>
+      <textarea class="txta" id="memo-inp" rows="3" placeholder="오늘 하루를 기록해보세요..."></textarea>
+      <button class="btn btn-b" style="width:100%;margin-top:10px;padding:10px" onclick="saveMemo()">메모 저장</button>
+    </div>
+  </div>
+
+  <!-- 식재료 탭 -->
+  <div class="page" id="p3">
+    <!-- 검색 -->
+    <div class="card" style="padding:14px 18px">
+      <div class="lbl">식재료 검색</div>
+      <div class="food-search-wrap">
+        <input class="inp" id="food-search" placeholder="식재료 이름으로 검색..." oninput="rFoods()"/>
+        <button class="food-search-clear" onclick="clearFoodSearch()">×</button>
+      </div>
+      <!-- 카테고리 -->
+      <div class="cat-tabs" id="cat-tabs"></div>
+    </div>
+
+    <!-- 식재료 목록 -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="lbl" style="margin-bottom:0" id="food-list-lbl">전체</div>
+        <span style="font-size:11px;color:#a8bfcc" id="food-count"></span>
+      </div>
+      <div id="food-list"></div>
+      <div id="food-empty" class="hide" style="text-align:center;padding:24px 0;color:#a8bfcc;font-size:13px">검색 결과가 없어요</div>
+    </div>
+
+    <!-- 새 식재료 추가 -->
+    <div class="card">
+      <div class="lbl">새 식재료 추가</div>
+      <div class="add-food-form">
+        <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:6px">식재료 이름</div>
+        <input class="inp" id="fi-name" placeholder="예: 닭가슴살, 두유, 계란" style="width:100%;margin-bottom:8px"/>
+        <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:6px">칼로리 & 기준량</div>
+        <div style="display:flex;gap:5px;align-items:center;margin-bottom:8px">
+          <input class="inp" id="fi-cal" type="number" placeholder="kcal" style="width:70px;flex-shrink:0;padding:9px 7px;font-size:13px"/>
+          <span style="font-size:11px;color:#7a93a8;white-space:nowrap;flex-shrink:0">kcal /</span>
+          <input class="inp" id="fi-amt" type="number" placeholder="양" style="width:52px;flex-shrink:0;padding:9px 7px;font-size:13px"/>
+          <select id="fi-unit" style="padding:9px 5px;border-radius:10px;border:1.5px solid #dce7f0;font-size:12px;outline:none;color:#2d3f52;background:#fafcff;flex-shrink:0;width:62px">
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+            <option value="개">개</option>
+            <option value="팩">팩</option>
+            <option value="봉">봉</option>
+            <option value="조각">조각</option>
+            <option value="컵">컵</option>
+            <option value="스푼">스푼</option>
+          </select>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#7a93a8;margin-bottom:6px">카테고리</div>
+        <select class="inp" id="fi-cat" style="width:100%;margin-bottom:10px"></select>
+        <button class="btn btn-g" style="width:100%;padding:11px" onclick="addFood()">+ 식재료 추가</button>
+      </div>
+    </div>
+
+    <!-- 카테고리 관리 -->
+    <div class="card">
+      <div class="lbl">카테고리 관리</div>
+      <div id="cat-manage-list"></div>
+      <div class="row" style="margin-top:10px;gap:6px">
+        <input class="inp" id="cat-new-inp" placeholder="새 카테고리 이름..." style="flex:1"/>
+        <button class="btn btn-g" onclick="addCat()" style="padding:10px 16px;font-size:15px">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 리포트 -->
+  <div class="page" id="p4">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <button class="btn btn-gray" style="width:32px;height:32px;padding:0;font-size:18px;border-radius:8px" onclick="chgWeek(-1)">‹</button>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:700;color:#2d3f52" id="rep-lbl"></div><div id="rep-this" style="font-size:10px;color:#7c9cbf;font-weight:600;margin-top:2px"></div></div>
+        <button class="btn btn-gray" id="rep-nxt" style="width:32px;height:32px;padding:0;font-size:18px;border-radius:8px" onclick="chgWeek(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-hdr" style="margin-bottom:6px"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div style="display:flex;gap:10px;margin-top:12px;justify-content:center;font-size:11px;color:#7a93a8">
+        <span>⚖️ 몸무게</span><span>🍽 식단</span><span>💪 운동</span><span>📝 메모</span>
+      </div>
+    </div>
+    <div class="card hide" id="detail-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:800;color:#2d3f52" id="detail-date"></div>
+        <button onclick="document.getElementById('detail-card').classList.add('hide')" style="background:none;border:none;color:#a8bfcc;font-size:20px;cursor:pointer">×</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">전체 기록 통계</div>
+      <div class="stats3" id="stats"></div>
+    </div>
+    <button class="btn btn-gray" style="width:100%;padding:12px;margin-bottom:10px" onclick="resetGoal()">⚙️ 목표 다시 설정</button>
+    <button class="btn" style="width:100%;padding:12px;background:#fdf0f2;color:#c4748a;border:1px solid #c4748a30" onclick="resetAll()">🗑 전체 데이터 초기화</button>
+  </div>
+
+  <!-- 백업 -->
+  <div class="page" id="p5">
+    <div class="card">
+      <div class="lbl">데이터 내보내기</div>
+      <p style="font-size:13px;color:#7a93a8;margin-bottom:14px;line-height:1.6">아래 버튼을 누르면 전체 기록이 텍스트로 변환돼요.<br>복사해서 노션, 메모장 등에 붙여넣기 하세요!</p>
+      <button class="btn btn-g" style="width:100%;padding:12px;margin-bottom:12px" onclick="genBackup()">📋 텍스트로 내보내기</button>
+      <div id="backup-out"></div>
+    </div>
+    <div class="card">
+      <div class="lbl">날짜별 기록 확인</div>
+      <div id="all-records-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 식재료 불러오기 팝업 -->
+<div class="food-picker-overlay hide" id="food-picker-overlay" onclick="closeFoodPicker(event)">
+  <div class="food-picker-sheet" id="food-picker-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>📋 식재료에서 불러오기</h3>
+      <button onclick="closeFoodPickerDirect()" style="background:none;border:none;color:#a8bfcc;font-size:22px;cursor:pointer">×</button>
+    </div>
+    <input class="inp" id="picker-search" placeholder="검색..." oninput="rPickerList()" style="width:100%;margin-bottom:10px"/>
+    <div id="picker-list"></div>
+    <div id="picker-empty" class="hide" style="text-align:center;padding:20px;color:#a8bfcc;font-size:13px">저장된 식재료가 없어요<br><span style="font-size:11px">식재료 탭에서 먼저 추가해보세요!</span></div>
+  </div>
+</div>
+
+<script>
+const WD=["월","화","수","목","금","토","일"];
+const SAMPLE=[{id:1,text:"물 2L 마시기"},{id:2,text:"야식 금지"},{id:3,text:"저녁 9시 이후 금식"},{id:4,text:"30분 이상 운동"}];
+const MEAL_TYPES={breakfast:"🌅 아침",lunch:"☀️ 점심",dinner:"🌙 저녁",snack:"🍬 간식"};
+
+// 기본 식재료 데이터
+const DEFAULT_FOODS = [
+  {id:10001,name:"계란",cal:60,amt:1,unit:"개",cat:"단백질"},
+  {id:10002,name:"닭가슴살",cal:110,amt:100,unit:"g",cat:"단백질"},
+  {id:10003,name:"두유",cal:110,amt:1,unit:"팩",cat:"음료"},
+  {id:10004,name:"스트링치즈",cal:60,amt:1,unit:"개",cat:"유제품"},
+  {id:10005,name:"바나나",cal:110,amt:1,unit:"개",cat:"채소/과일"},
+  {id:10006,name:"어육소시지",cal:45,amt:1,unit:"개",cat:"단백질"},
+  {id:10007,name:"하루견과류",cal:100,amt:1,unit:"봉",cat:"간식"},
+  {id:10008,name:"현미밥",cal:100,amt:65,unit:"g",cat:"탄수화물"},
+  {id:10009,name:"순두부",cal:75,amt:150,unit:"g",cat:"단백질"},
+  {id:10010,name:"오트밀",cal:150,amt:40,unit:"g",cat:"탄수화물"},
+];
+
+function ld(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+let setup=ld("dt_s",null),items=ld("dt_i",SAMPLE),checks=ld("dt_c",{}),records=ld("dt_r",{}),weekOff=0,curTab=0,selDate="",selChkDate="";
+let foods=ld("dt_foods",DEFAULT_FOODS);
+let selCat="전체",pickerMealType=null;
+const DEFAULT_CATS=["단백질","탄수화물","유제품","채소/과일","음료","간식","기타"];
+let userCats=ld("dt_cats",DEFAULT_CATS);
+
+function td(){
+  const now=new Date(),kst=new Date(now.getTime()+9*60*60*1000);
+  return kst.toISOString().slice(0,10);
+}
+function wk(ref){const d=ref?new Date(ref):new Date(),day=d.getDay(),diff=day===0?-6:1-day;return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+diff+i);return x.toISOString().slice(0,10);});}
+function fd(s){const[,m,d]=s.split("-");return`${+m}/${+d}`;}
+function getRec(date){return records[date]||{};}
+function setRec(date,data){records[date]=data;sv("dt_r",records);}
+
+function startApp(){
+  const sw=document.getElementById("f-sw").value,tw=document.getElementById("f-tw").value,sd=document.getElementById("f-sd").value,ed=document.getElementById("f-ed").value;
+  if(!sw||!tw||!sd||!ed){alert("모든 항목을 입력해주세요!");return;}
+  setup={sw:+sw,tw:+tw,sd,ed,r1:document.getElementById("f-r1").value,r2:document.getElementById("f-r2").value,r3:document.getElementById("f-r3").value};
+  sv("dt_s",setup);showApp();
+}
+
+function showApp(){
+  document.getElementById("setup-screen").classList.add("hide");
+  document.getElementById("app-screen").classList.remove("hide");
+  document.getElementById("hdr-date").textContent=`${setup.sd} ~ ${setup.ed}`;
+  selDate=td();
+  document.getElementById("rec-date").value=selDate;
+  document.getElementById("rec-date").addEventListener("change",e=>{selDate=e.target.value;rRec();});
+  selChkDate=td();
+  document.getElementById("chk-date").value=selChkDate;
+  document.getElementById("chk-date").addEventListener("change",e=>{selChkDate=e.target.value;rChk();});
+  render();
+}
+
+function goTab(i){
+  curTab=i;
+  document.querySelectorAll(".tbtn").forEach((b,j)=>b.classList.toggle("on",i===j));
+  document.querySelectorAll(".page").forEach((p,j)=>p.classList.toggle("on",i===j));
+  render();
+}
+
+function render(){
+  rHome();
+  if(curTab===1)rChk();
+  if(curTab===2)rRec();
+  if(curTab===3)rFoods();
+  if(curTab===4)rRep();
+  if(curTab===5)rBackup();
+}
+
+// ── 홈 렌더 ──
+function rHome(){
+  const t=td(),rec=getRec(t),ch=checks[t]||{};
+  const tw=setup.tw,sw=setup.sw,todayW=rec.weight||null;
+  const lost=todayW?sw-todayW:0,need=sw-tw;
+  const wPct=need>0?Math.max(0,Math.min(lost/need,1)):0;
+  const totalCal=calcTotalCal(rec);
+  const done=items.filter(it=>ch[it.id]).length,chkPct=items.length>0?done/items.length:0;
+  const totalD=Math.max(1,Math.ceil((new Date(setup.ed)-new Date(setup.sd))/86400000));
+  const passed=Math.max(0,Math.ceil((new Date(t)-new Date(setup.sd))/86400000));
+  const dayPct=Math.min(passed/totalD,1);
+  const circ=2*Math.PI*34;
+  const rules=[setup.r1,setup.r2,setup.r3].filter(Boolean);
+  document.getElementById("goal-card").innerHTML=`
+    <div style="font-size:11px;font-weight:600;opacity:.8;margin-bottom:4px">목표 몸무게</div>
+    <div style="display:flex;align-items:flex-end;gap:6px"><span style="font-size:48px;font-weight:800;line-height:1;font-family:monospace">${tw}</span><span style="font-size:17px;font-weight:600;margin-bottom:4px">kg</span></div>
+    <div style="font-size:12px;opacity:.85;margin-top:4px">${sw}kg → ${tw}kg · ${need>0?need.toFixed(1)+"kg 감량":"유지"}</div>
+    ${rules.length?`<div style="margin-top:14px;background:rgba(255,255,255,.18);border-radius:12px;padding:11px 13px"><div style="font-size:10px;font-weight:700;opacity:.75;letter-spacing:1px;margin-bottom:7px;text-transform:uppercase">꼭 지켜야 할 것</div>${rules.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:${i<rules.length-1?5:0}px"><div style="width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,.3);font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><span style="font-size:12px;opacity:.95">${r}</span></div>`).join("")}</div>`:""}
+    <div class="prog-bar"><div class="prog-fill" style="width:${wPct*100}%"></div></div>
+    <div style="font-size:11px;opacity:.8;margin-top:4px">감량 진행률 ${Math.round(wPct*100)}% · D-${Math.max(0,totalD-passed)}</div>`;
+  document.getElementById("h-w").innerHTML=`${todayW||"—"}<span style="font-size:12px;font-weight:500;color:#7a93a8"> kg</span>`;
+  const de=document.getElementById("h-wdiff");
+  de.textContent=todayW&&lost!==0?(lost>0?`▼ ${lost.toFixed(1)}kg`:`▲ ${Math.abs(lost).toFixed(1)}kg`):"";
+  de.style.color=lost>0?"#6baa9f":"#c4748a";
+  document.getElementById("h-cal").innerHTML=`${totalCal}<span style="font-size:12px;font-weight:500;color:#7a93a8"> kcal</span>`;
+  document.getElementById("cc").setAttribute("stroke-dasharray",`${circ*chkPct} ${circ}`);
+  document.getElementById("cpct").textContent=Math.round(chkPct*100)+"%";
+  document.getElementById("ccnt").textContent=`${done} / ${items.length}`;
+  document.getElementById("call").textContent=chkPct===1?"🎉 오늘 모두 달성!":"";
+  document.getElementById("dc").setAttribute("stroke-dasharray",`${circ*dayPct} ${circ}`);
+  document.getElementById("dpct").textContent=Math.round(dayPct*100)+"%";
+  document.getElementById("dcnt").textContent=`D+${passed}`;
+  document.getElementById("dtotal").textContent=`전체 ${totalD}일 중`;
+  document.getElementById("drem").textContent=`D-${Math.max(0,totalD-passed)} 남음`;
+  const allW=Object.entries(records).filter(([,r])=>r.weight).sort(([a],[b])=>a.localeCompare(b)).map(([date,r])=>({date,v:r.weight}));
+  const cc=document.getElementById("wchart-card");
+  if(allW.length>=2){cc.classList.remove("hide");drawChart(allW,tw);}else cc.classList.add("hide");
+}
+
+function calcTotalCal(rec){
+  if(rec.manualCal!=null&&rec.manualCal!=="")return rec.manualCal;
+  let t=0;
+  ["breakfast","lunch","dinner","snack"].forEach(k=>{(rec[k]||[]).forEach(m=>t+=(m.cal||0));});
+  return t;
+}
+
+function drawChart(data,target){
+  const W=300,H=110,pL=34,pR=14,pT=14,pB=26;
+  const vals=data.map(d=>d.v),minV=Math.min(...vals,target)-.5,maxV=Math.max(...vals)+.5,range=maxV-minV||1;
+  const iw=W-pL-pR,tx=i=>pL+(i/(data.length-1))*iw,ty=v=>pT+((maxV-v)/range)*(H-pT-pB),tyy=ty(target);
+  const pts=data.map((d,i)=>`${tx(i)},${ty(d.v)}`).join(" ");
+  const svg=document.getElementById("wchart");svg.setAttribute("width",W);
+  svg.innerHTML=`<line x1="${pL}" y1="${tyy}" x2="${W-pR}" y2="${tyy}" stroke="#6baa9f" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>
+    <text x="${pL-3}" y="${tyy-4}" font-size="9" fill="#6baa9f" text-anchor="end">목표</text>
+    <polyline points="${pts}" fill="none" stroke="#7c9cbf" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${data.map((d,i)=>`<circle cx="${tx(i)}" cy="${ty(d.v)}" r="4" fill="#7c9cbf"/><text x="${tx(i)}" y="${ty(d.v)-7}" font-size="10" fill="#7c9cbf" text-anchor="middle" font-weight="700">${d.v}</text>`).join("")}
+    ${data.filter((_,i)=>i%Math.ceil(data.length/5)===0).map((d)=>`<text x="${tx(data.indexOf(d))}" y="${H-2}" font-size="9" fill="#a8bfcc" text-anchor="middle">${fd(d.date)}</text>`).join("")}`;
+}
+
+// ── 체크리스트 ──
+function rChk(){
+  const t=selChkDate||td(),ch=checks[t]||{};
+  const isToday=t===td();
+  document.getElementById("chk-lbl").textContent=isToday?`오늘 체크 — ${t}`:`${t} 체크`;
+  const done=items.filter(it=>ch[it.id]).length;
+  document.getElementById("chk-list").innerHTML=items.length===0?`<div style="text-align:center;padding:18px 0;color:#a8bfcc;font-size:14px">아래에서 항목을 추가해 주세요</div>`:
+    items.map(it=>`<div class="chk-row" onclick="tglChk(${it.id})"><div class="chkbox ${ch[it.id]?"on":""}">${ch[it.id]?"✓":""}</div><span class="chktxt ${ch[it.id]?"on":""}">${it.text}</span></div>`).join("");
+  document.getElementById("chk-done").textContent=items.length?`${done}/${items.length} 완료`:"";
+  const wd=wk(t);
+  document.getElementById("wbars").innerHTML=wd.map((d,i)=>{
+    const dc=checks[d]||{},pct=items.length>0?items.filter(it=>dc[it.id]).length/items.length:0,isT=d===t;
+    return`<div class="wbar"><div style="font-size:10px;color:#7a93a8;margin-bottom:4px">${WD[i]}</div><div class="wbar-bg ${isT?"today":""}"><div class="wbar-fill ${pct===1?"full":""}" style="height:${pct*100}%"></div></div><div style="font-size:9px;color:#7a93a8;margin-top:3px">${Math.round(pct*100)}%</div></div>`;}).join("");
+  const il=document.getElementById("item-list");
+  il.innerHTML=items.map((it,idx)=>`<div class="drag-item" draggable="true" data-idx="${idx}" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #dce7f0;cursor:default">
+    <div class="drag-handle" style="color:#c5d5e4;font-size:18px;cursor:grab;padding:0 2px;flex-shrink:0;user-select:none">⠿</div>
+    <span style="flex:1;font-size:14px;color:#2d3f52">${it.text}</span>
+    <button style="background:none;border:none;color:#7c9cbf;font-size:13px;padding:0 4px;cursor:pointer" onclick="moveItem(${idx},-1)">▲</button>
+    <button style="background:none;border:none;color:#7c9cbf;font-size:13px;padding:0 4px;cursor:pointer" onclick="moveItem(${idx},1)">▼</button>
+    <button class="rm" onclick="rmItem(${it.id})">×</button>
+  </div>`).join("");
+  initDrag();
+}
+
+function tglChk(id){const t=selChkDate||td();if(!checks[t])checks[t]={};checks[t][id]=!checks[t][id];sv("dt_c",checks);rChk();rHome();}
+function addItem(){const inp=document.getElementById("new-inp"),txt=inp.value.trim();if(!txt)return;items.push({id:Date.now(),text:txt});sv("dt_i",items);inp.value="";rChk();}
+function rmItem(id){items=items.filter(it=>it.id!==id);sv("dt_i",items);rChk();}
+function moveItem(idx,dir){
+  const ni=idx+dir;if(ni<0||ni>=items.length)return;
+  const tmp=items[idx];items[idx]=items[ni];items[ni]=tmp;sv("dt_i",items);rChk();
+}
+function initDrag(){
+  const rows=document.querySelectorAll(".drag-item");let dragIdx=null;
+  rows.forEach(row=>{
+    row.addEventListener("dragstart",e=>{dragIdx=+row.dataset.idx;row.style.opacity="0.4";});
+    row.addEventListener("dragend",e=>{row.style.opacity="1";dragIdx=null;document.querySelectorAll(".drag-item").forEach(r=>r.style.background="");});
+    row.addEventListener("dragover",e=>{e.preventDefault();row.style.background="#f0f5fb";});
+    row.addEventListener("dragleave",e=>{row.style.background="";});
+    row.addEventListener("drop",e=>{e.preventDefault();row.style.background="";const toIdx=+row.dataset.idx;if(dragIdx===null||dragIdx===toIdx)return;const moved=items.splice(dragIdx,1)[0];items.splice(toIdx,0,moved);sv("dt_i",items);rChk();});
+  });
+}
+
+// ── 기록 ──
+function rRec(){
+  const rec=getRec(selDate);
+  document.getElementById("w-inp").value=rec.weight||"";
+  document.getElementById("w-saved").textContent=rec.weight?`저장된 몸무게: ${rec.weight}kg`:"";
+  ["breakfast","lunch","dinner","snack"].forEach(k=>{
+    const list=document.getElementById("meal-"+k);
+    list.innerHTML=(rec[k]||[]).map((m,i)=>`<div class="rec-row" id="meal-item-${k}-${i}">
+      <span style="font-size:13px;color:#2d3f52;flex:1">${m.name}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:12px;font-weight:700;color:#9b87c4;font-family:monospace">${m.cal}kcal</span>
+        <button class="rm" style="font-size:14px;color:#7c9cbf" onclick="editMeal('${k}',${i})">✏️</button>
+        <button class="rm" onclick="rmMeal('${k}',${i})">×</button>
+      </div>
+    </div>`).join("");
+  });
+  const total=calcTotalCal(rec);
+  document.getElementById("total-cal").textContent=`${total} kcal`;
+  document.getElementById("manual-cal").value=rec.manualCal!=null?rec.manualCal:"";
+  document.getElementById("manual-cal-saved").textContent=rec.manualCal!=null?`직접 입력값: ${rec.manualCal}kcal (항목 합산 무시됨)`:"";
+  document.getElementById("ex-list").innerHTML=(rec.exercises||[]).map((e,i)=>`<div class="rec-row"><span style="font-size:13px;color:#2d3f52">🏃 ${e.name}${e.min?` (${e.min}분)`:""}</span><button class="rm" onclick="rmEx(${i})">×</button></div>`).join("");
+  document.querySelectorAll(".mood-btn").forEach(b=>b.classList.remove("on"));
+  if(rec.mood){const mb=document.getElementById("mood-"+rec.mood);if(mb)mb.classList.add("on");}
+  document.getElementById("memo-inp").value=rec.memo||"";
+}
+
+function saveW(){
+  const v=document.getElementById("w-inp").value;if(!v)return;
+  const rec=getRec(selDate);rec.weight=+v;setRec(selDate,rec);
+  document.getElementById("w-saved").textContent=`저장된 몸무게: ${v}kg`;rHome();
+}
+function addMeal(type){
+  const name=document.getElementById("m-"+type).value.trim();const cal=+document.getElementById("mc-"+type).value;
+  if(!name)return;const rec=getRec(selDate);if(!rec[type])rec[type]=[];
+  rec[type].push({name,cal:cal||0});setRec(selDate,rec);
+  document.getElementById("m-"+type).value="";document.getElementById("mc-"+type).value="";
+  rRec();rHome();
+}
+function rmMeal(type,i){const rec=getRec(selDate);rec[type].splice(i,1);setRec(selDate,rec);rRec();rHome();}
+function editMeal(type,i){
+  const rec=getRec(selDate),m=rec[type][i];
+  const row=document.getElementById(`meal-item-${type}-${i}`);
+  row.innerHTML=`<div style="display:flex;gap:6px;width:100%;padding:4px 0">
+    <input class="inp" id="edit-name-${type}-${i}" value="${m.name}" style="flex:3;font-size:13px;padding:7px 10px"/>
+    <input class="inp" id="edit-cal-${type}-${i}" type="number" value="${m.cal}" placeholder="kcal" style="flex:1;min-width:0;font-size:13px;padding:7px 8px"/>
+    <button class="btn btn-b" onclick="saveMealEdit('${type}',${i})" style="padding:7px 12px;font-size:13px;flex-shrink:0">저장</button>
+    <button class="btn btn-gray" onclick="rRec()" style="padding:7px 10px;font-size:12px;flex-shrink:0">취소</button>
+  </div>`;
+}
+function saveMealEdit(type,i){
+  const name=document.getElementById(`edit-name-${type}-${i}`).value.trim();const cal=+document.getElementById(`edit-cal-${type}-${i}`).value||0;
+  if(!name)return;const rec=getRec(selDate);rec[type][i]={name,cal};setRec(selDate,rec);rRec();rHome();
+}
+function saveManualCal(){
+  const v=document.getElementById("manual-cal").value;if(v==="")return;
+  const rec=getRec(selDate);rec.manualCal=+v;setRec(selDate,rec);rRec();rHome();
+}
+function clearManualCal(){const rec=getRec(selDate);rec.manualCal=null;setRec(selDate,rec);rRec();rHome();}
+function addEx(){
+  const name=document.getElementById("en").value.trim();if(!name)return;const min=+document.getElementById("em").value||0;
+  const rec=getRec(selDate);if(!rec.exercises)rec.exercises=[];rec.exercises.push({name,min});setRec(selDate,rec);
+  document.getElementById("en").value="";document.getElementById("em").value="";rRec();
+}
+function rmEx(i){const rec=getRec(selDate);rec.exercises.splice(i,1);setRec(selDate,rec);rRec();}
+function setMood(mood){const rec=getRec(selDate);rec.mood=rec.mood===mood?null:mood;setRec(selDate,rec);rRec();}
+function saveMemo(){const v=document.getElementById("memo-inp").value;const rec=getRec(selDate);rec.memo=v;setRec(selDate,rec);alert("메모가 저장됐어요!");}
+
+// ── 식재료 탭 ──
+function rFoods(){
+  // 카테고리 탭 (userCats 기반)
+  const allCats=["전체",...userCats];
+  // fi-cat select 업데이트
+  const fiCat=document.getElementById("fi-cat");
+  if(fiCat){fiCat.innerHTML=userCats.map(c=>`<option value="${c}">${c}</option>`).join("");}
+  // 카테고리 관리 목록
+  const cml=document.getElementById("cat-manage-list");
+  if(cml){cml.innerHTML=userCats.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f4f8">
+    <span style="flex:1;font-size:14px;color:#2d3f52">${c}</span>
+    ${userCats.length>1?`<button class="rm" onclick="rmCat(${i})">×</button>`:""}
+  </div>`).join("");}
+  document.getElementById("cat-tabs").innerHTML=allCats.map(c=>`<button class="cat-tab ${selCat===c?"on":""}" onclick="selCatF('${c}')">${c}</button>`).join("");
+  const q=(document.getElementById("food-search")||{value:""}).value.trim().toLowerCase();
+  let list=foods.filter(f=>{
+    const matchCat=selCat==="전체"||f.cat===selCat;
+    const matchQ=!q||f.name.toLowerCase().includes(q);
+    return matchCat&&matchQ;
+  });
+  list=list.sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+  document.getElementById("food-list-lbl").textContent=selCat==="전체"?"전체":selCat;
+  document.getElementById("food-count").textContent=`${list.length}개`;
+  if(list.length===0){
+    document.getElementById("food-list").innerHTML="";
+    document.getElementById("food-empty").classList.remove("hide");
+  } else {
+    document.getElementById("food-empty").classList.add("hide");
+    document.getElementById("food-list").innerHTML=list.map(f=>`
+      <div class="food-item">
+        <div class="food-item-left">
+          <div class="food-item-name">${f.name}</div>
+          <div class="food-item-meta">${f.cat} · ${f.amt}${f.unit}당</div>
+        </div>
+        <div class="food-item-btns">
+          <span class="food-item-cal">${f.cal}kcal</span>
+          <button class="food-rm-btn" onclick="rmFood(${f.id})">×</button>
+        </div>
+      </div>`).join("");
+  }
+}
+
+function selCatF(c){selCat=c;rFoods();}
+function clearFoodSearch(){document.getElementById("food-search").value="";rFoods();}
+
+function addFood(){
+  const name=document.getElementById("fi-name").value.trim();
+  const cal=+document.getElementById("fi-cal").value;
+  const amt=+document.getElementById("fi-amt").value||1;
+  const unit=document.getElementById("fi-unit").value;
+  const cat=document.getElementById("fi-cat").value;
+  if(!name||!cal){alert("이름과 칼로리를 입력해주세요!");return;}
+  foods.push({id:Date.now(),name,cal,amt,unit,cat});sv("dt_foods",foods);
+  document.getElementById("fi-name").value="";document.getElementById("fi-cal").value="";document.getElementById("fi-amt").value="";
+  rFoods();
+}
+
+function rmFood(id){
+  if(!confirm("삭제할까요?"))return;
+  foods=foods.filter(f=>f.id!==id);sv("dt_foods",foods);rFoods();
+}
+
+// ── 카테고리 관리 ──
+function addCat(){
+  const inp=document.getElementById("cat-new-inp"),txt=inp.value.trim();
+  if(!txt)return;
+  if(userCats.includes(txt)){alert("이미 있는 카테고리예요!");return;}
+  userCats.push(txt);sv("dt_cats",userCats);inp.value="";rFoods();
+}
+function rmCat(i){
+  const cat=userCats[i];
+  const inUse=foods.some(f=>f.cat===cat);
+  if(inUse){alert(`"${cat}" 카테고리를 사용 중인 식재료가 있어요!\n먼저 해당 식재료의 카테고리를 변경해주세요.`);return;}
+  if(!confirm(`"${cat}" 카테고리를 삭제할까요?`))return;
+  userCats.splice(i,1);sv("dt_cats",userCats);
+  if(selCat===cat)selCat="전체";
+  rFoods();
+}
+
+// ── 식재료 불러오기 팝업 ──
+function openFoodPicker(mealType){
+  pickerMealType=mealType;
+  document.getElementById("picker-search").value="";
+  document.getElementById("food-picker-overlay").classList.remove("hide");
+  rPickerList();
+}
+function closeFoodPickerDirect(){
+  document.getElementById("food-picker-overlay").classList.add("hide");
+  pickerMealType=null;
+}
+function closeFoodPicker(e){
+  if(e.target===document.getElementById("food-picker-overlay"))closeFoodPickerDirect();
+}
+function rPickerList(){
+  const q=document.getElementById("picker-search").value.trim().toLowerCase();
+  const list=foods.filter(f=>!q||f.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,"ko"));
+  if(list.length===0){
+    document.getElementById("picker-list").innerHTML="";
+    document.getElementById("picker-empty").classList.remove("hide");
+  } else {
+    document.getElementById("picker-empty").classList.add("hide");
+    document.getElementById("picker-list").innerHTML=list.map(f=>`
+      <div class="pick-item" onclick="pickFood(${f.id})">
+        <div>
+          <div class="pick-name">${f.name}</div>
+          <div style="font-size:11px;color:#a8bfcc">${f.cat}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="pick-cal">${f.cal}kcal</span>
+          <span class="pick-unit">/ ${f.amt}${f.unit}</span>
+        </div>
+      </div>`).join("");
+  }
+}
+function pickFood(id){
+  const f=foods.find(x=>x.id===id);if(!f||!pickerMealType)return;
+  const rec=getRec(selDate);if(!rec[pickerMealType])rec[pickerMealType]=[];
+  rec[pickerMealType].push({name:f.name,cal:f.cal});
+  setRec(selDate,rec);rRec();rHome();
+  closeFoodPickerDirect();
+}
+
+// ── 리포트 ──
+function rRep(){
+  const t=td(),ref=new Date(t);ref.setDate(ref.getDate()+weekOff*7);
+  const wd=wk(ref.toISOString().slice(0,10));
+  document.getElementById("rep-lbl").textContent=`${fd(wd[0])} ~ ${fd(wd[6])}`;
+  document.getElementById("rep-this").textContent=weekOff===0?"이번 주":"";
+  document.getElementById("rep-nxt").style.color=weekOff===0?"#a8bfcc":"#7a93a8";
+  document.getElementById("cal-hdr").innerHTML=WD.map(d=>`<div style="text-align:center;font-size:10px;color:#a8bfcc;font-weight:600;padding:3px 0">${d}</div>`).join("");
+  document.getElementById("cal-grid").innerHTML=wd.map((d,i)=>{
+    const rec=getRec(d),ch=checks[d]||{};
+    const done=items.filter(it=>ch[it.id]).length,pct=items.length>0?done/items.length:0;
+    const hasW=!!rec.weight,hasM=calcTotalCal(rec)>0,hasE=(rec.exercises||[]).length>0,hasNote=!!rec.memo;
+    const isT=d===t,isFut=d>t,dn=+d.slice(8);
+    const hasSomething=hasW||hasM||hasE||done>0||rec.mood||hasNote;
+    const cls=`cal-cell${isT?" istoday":""}${isFut?" future":""}${!isFut&&hasSomething?" hasdata":""}`;
+    return`<div class="${cls}" onclick="${!isFut?"showDetail('"+d+"')":""}">
+      <div style="font-size:12px;font-weight:${isT?800:600};color:${isT?"#7c9cbf":"#2d3f52"};margin-bottom:4px">${dn}</div>
+      ${!isFut?`<div style="width:80%;height:3px;border-radius:4px;background:#e8eef4;margin-bottom:4px;overflow:hidden"><div style="height:100%;width:${pct*100}%;background:${pct===1?"#6baa9f":"#7c9cbf"};border-radius:4px"></div></div>`:""}
+      ${!isFut?`<div style="font-size:9px;display:flex;flex-wrap:wrap;justify-content:center;gap:1px">${hasW?"⚖️":""}${hasM?"🍽":""}${hasE?"💪":""}${hasNote?"📝":""}${rec.mood?rec.mood:""}</div>`:""}
+      ${hasW?`<div style="font-size:8px;color:#5a7a9e;font-weight:700;margin-top:2px;font-family:monospace">${rec.weight}kg</div>`:""}
+    </div>`;}).join("");
+  const allW=Object.entries(records).filter(([,r])=>r.weight).map(([,r])=>r.weight);
+  const t0=getRec(t),lost=t0.weight?setup.sw-t0.weight:0;
+  document.getElementById("stats").innerHTML=`
+    <div class="sbox"><div style="font-size:16px;font-weight:800;color:#9b87c4;font-family:monospace">${Object.keys(records).length}일</div><div style="font-size:11px;color:#7a93a8;margin-top:3px">기록일</div></div>
+    <div class="sbox"><div style="font-size:16px;font-weight:800;color:#6baa9f;font-family:monospace">${allW.length?Math.min(...allW)+"kg":"—"}</div><div style="font-size:11px;color:#7a93a8;margin-top:3px">최저 몸무게</div></div>
+    <div class="sbox"><div style="font-size:16px;font-weight:800;color:#7c9cbf;font-family:monospace">${lost>0?lost.toFixed(1)+"kg":"—"}</div><div style="font-size:11px;color:#7a93a8;margin-top:3px">총 감량</div></div>`;
+}
+
+function showDetail(date){
+  const rec=getRec(date),ch=checks[date]||{};
+  const card=document.getElementById("detail-card"),body=document.getElementById("detail-body");
+  document.getElementById("detail-date").textContent=`📅 ${date}`;
+  let html="";
+  if(rec.mood)html+=`<div style="font-size:24px;margin-bottom:10px">${rec.mood}</div>`;
+  if(rec.weight)html+=`<div style="margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:#a8bfcc;letter-spacing:1px">몸무게</span><div style="font-size:16px;font-weight:800;color:#2d3f52;font-family:monospace;margin-top:3px">${rec.weight} kg</div></div>`;
+  const total=calcTotalCal(rec);
+  if(total>0){
+    html+=`<div style="margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:#a8bfcc;letter-spacing:1px">식단</span>`;
+    ["breakfast","lunch","dinner","snack"].forEach(k=>{
+      if((rec[k]||[]).length>0){
+        html+=`<div style="margin-top:5px"><span style="font-size:11px;color:#7c9cbf;font-weight:600">${MEAL_TYPES[k]}</span>`;
+        rec[k].forEach(m=>html+=`<div style="font-size:13px;color:#2d3f52;padding:2px 0">${m.name}${m.cal?` <span style="color:#9b87c4;font-family:monospace">${m.cal}kcal</span>`:""}</div>`);
+        html+=`</div>`;
+      }
+    });
+    html+=`<div style="font-size:12px;font-weight:700;color:#9b87c4;margin-top:6px;font-family:monospace">합계: ${total} kcal</div></div>`;
+  }
+  if((rec.exercises||[]).length>0){
+    html+=`<div style="margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:#a8bfcc;letter-spacing:1px">운동</span>`;
+    rec.exercises.forEach(e=>html+=`<div style="font-size:13px;color:#2d3f52;padding:2px 0">🏃 ${e.name}${e.min?` (${e.min}분)`:""}</div>`);
+    html+=`</div>`;
+  }
+  const chkDone=items.filter(it=>ch[it.id]);
+  if(chkDone.length>0){
+    html+=`<div style="margin-bottom:10px"><span style="font-size:11px;font-weight:700;color:#a8bfcc;letter-spacing:1px">체크리스트</span><div style="margin-top:5px">`;
+    chkDone.forEach(it=>html+=`<span style="font-size:11px;background:#7c9cbf18;color:#5a7a9e;border-radius:6px;padding:3px 7px;font-weight:600;display:inline-block;margin:2px">✓ ${it.text}</span>`);
+    html+=`</div></div>`;
+  }
+  if(rec.memo)html+=`<div style="margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:#a8bfcc;letter-spacing:1px">메모</span><div style="font-size:13px;color:#2d3f52;margin-top:5px;line-height:1.6;background:#f8fafc;padding:10px;border-radius:8px">${rec.memo.replace(/\n/g,"<br>")}</div></div>`;
+  if(!html)html=`<div style="text-align:center;color:#a8bfcc;font-size:13px;padding:16px 0">이 날의 기록이 없어요</div>`;
+  body.innerHTML=html;card.classList.remove("hide");
+  card.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function chgWeek(d){if(d===1&&weekOff===0)return;weekOff+=d;rRep();}
+
+// ── 백업 ──
+function rBackup(){
+  const dates=Object.keys(records).sort();
+  const el=document.getElementById("all-records-list");
+  if(dates.length===0){el.innerHTML=`<div style="text-align:center;color:#a8bfcc;font-size:13px;padding:16px 0">아직 기록이 없어요</div>`;return;}
+  el.innerHTML=dates.reverse().map(d=>{
+    const rec=getRec(d),total=calcTotalCal(rec);
+    return`<div style="padding:10px 0;border-bottom:1px solid #dce7f0;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:13px;font-weight:700;color:#2d3f52">${d}</div><div style="font-size:11px;color:#7a93a8;margin-top:2px">${rec.mood||""}${rec.weight?" ⚖️"+rec.weight+"kg":""}${total?" 🍽"+total+"kcal":""}${(rec.exercises||[]).length?" 💪"+rec.exercises.length+"회":""}</div></div>
+      <button class="btn btn-b" style="padding:6px 12px;font-size:12px" onclick="showDetail('${d}');goTab(4)">보기</button>
+    </div>`;}).join("");
+}
+
+function genBackup(){
+  const dates=Object.keys(records).sort().reverse();
+  if(dates.length===0){alert("기록이 없어요!");return;}
+  let txt="========== 다이어트 트래커 기록 ==========\n";
+  txt+=`목표: ${setup.sw}kg → ${setup.tw}kg\n기간: ${setup.sd} ~ ${setup.ed}\n`;
+  txt+="==========================================\n\n";
+  dates.forEach(d=>{
+    const rec=getRec(d),ch=checks[d]||{};
+    txt+=`📅 ${d}\n`;
+    if(rec.mood)txt+=`기분: ${rec.mood}\n`;
+    if(rec.weight)txt+=`몸무게: ${rec.weight}kg\n`;
+    ["breakfast","lunch","dinner","snack"].forEach(k=>{
+      if((rec[k]||[]).length>0){txt+=`${MEAL_TYPES[k]}: `;txt+=rec[k].map(m=>`${m.name}${m.cal?" ("+m.cal+"kcal)":""}`).join(", ")+"\n";}
+    });
+    const total=calcTotalCal(rec);
+    if(total>0)txt+=`하루 총 칼로리: ${total}kcal\n`;
+    if((rec.exercises||[]).length>0)txt+=`운동: ${rec.exercises.map(e=>e.name+(e.min?"("+e.min+"분)":"")).join(", ")}\n`;
+    const chkDone=items.filter(it=>ch[it.id]);
+    if(chkDone.length>0)txt+=`체크: ${chkDone.map(it=>it.text).join(", ")}\n`;
+    if(rec.memo)txt+=`메모: ${rec.memo}\n`;
+    txt+="------------------------------------------\n";
+  });
+  document.getElementById("backup-out").innerHTML=`
+    <div class="backup-box" id="backup-txt">${txt}</div>
+    <button class="btn btn-g" style="width:100%;margin-top:10px;padding:11px" onclick="copyBackup()">📋 전체 복사</button>`;
+}
+
+function copyBackup(){
+  const txt=document.getElementById("backup-txt").textContent;
+  navigator.clipboard.writeText(txt).then(()=>alert("복사됐어요! 노션에 붙여넣기 하세요 😊")).catch(()=>{
+    const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand("copy");document.body.removeChild(ta);alert("복사됐어요!");
+  });
+}
+
+function resetGoal(){if(confirm("목표를 다시 설정할까요? 기록 데이터는 유지됩니다.")){setup=null;sv("dt_s",null);document.getElementById("app-screen").classList.add("hide");document.getElementById("setup-screen").classList.remove("hide");}}
+function resetAll(){if(confirm("⚠️ 모든 데이터가 삭제됩니다. 정말 초기화할까요?")){localStorage.clear();location.reload();}}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("new-inp").addEventListener("keyup",e=>{if(e.key==="Enter")addItem();});
+  document.getElementById("w-inp").addEventListener("keyup",e=>{if(e.key==="Enter")saveW();});
+  ["breakfast","lunch","dinner","snack"].forEach(k=>{
+    document.getElementById("m-"+k).addEventListener("keyup",e=>{if(e.key==="Enter")addMeal(k);});
+  });
+  document.getElementById("en").addEventListener("keyup",e=>{if(e.key==="Enter")addEx();});
+  if(setup){selDate=td();showApp();}
+  let _lastDate=td();
+  setInterval(()=>{
+    const newDate=td();
+    if(newDate!==_lastDate){
+      _lastDate=newDate;
+      if(selDate!==newDate){selDate=newDate;const r=document.getElementById("rec-date");if(r)r.value=newDate;}
+      if(selChkDate!==newDate){selChkDate=newDate;const c=document.getElementById("chk-date");if(c)c.value=newDate;}
+      render();
+    }
+  },60000);
+});
+</script>
+</body>
+</html>
