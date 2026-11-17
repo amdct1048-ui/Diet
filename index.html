@@ -197,7 +197,7 @@ input,button,textarea,select{font-family:inherit;}
         <input type="date" class="date-sel" id="chart-to" style="flex:1;min-width:0" onchange="setChartDate()"/>
       </div>
       <div id="chart-info" style="font-size:12px;color:#7a93a8;line-height:1.5;margin-bottom:6px"></div>
-      <div style="width:100%"><svg id="wchart" height="130" style="overflow:visible;display:block"></svg></div>
+      <div style="width:100%"><svg id="wchart" height="250" style="overflow:visible;display:block"></svg></div>
     </div>
     <div class="card">
       <div class="lbl">기간 진행</div>
@@ -610,23 +610,65 @@ function rChart(){
   info.innerHTML=`${fd(first.date)} <b>${first.v}kg</b> → ${fd(last.date)} <b>${last.v}kg</b> <b style="color:${dClr}">${dTxt}</b> · ${data.length}회 기록`;
   drawChart(data,setup.tw);
 }
+// 의미 있는 변곡점(방향이 바뀌는 지점) 찾기: thr(kg) 이상 반대로 움직이면 확정
+function findPivots(vals,thr){
+  const piv=[];let hiI=0,loI=0,dir=0;
+  for(let i=1;i<vals.length;i++){
+    const v=vals[i];
+    if(v>vals[hiI])hiI=i;
+    if(v<vals[loI])loI=i;
+    if(dir<=0&&v-vals[loI]>=thr){piv.push(loI);dir=1;hiI=i;}
+    else if(dir>=0&&vals[hiI]-v>=thr){piv.push(hiI);dir=-1;loI=i;}
+  }
+  return piv;
+}
 function drawChart(data,target){
   const svg=document.getElementById("wchart");
-  const W=Math.max(280,svg.parentElement.clientWidth||300),H=130,pL=34,pR=14,pT=18,pB=26;
+  const W=Math.max(280,svg.parentElement.clientWidth||300),H=250,pL=30,pR=14,pT=20,pB=26;
   const n=data.length,vals=data.map(d=>d.v);
-  const minV=Math.min(...vals,target)-.5,maxV=Math.max(...vals)+.5,range=maxV-minV||1;
-  const iw=W-pL-pR,tx=i=>pL+(i/(n-1))*iw,ty=v=>pT+((maxV-v)/range)*(H-pT-pB),tyy=ty(target);
+  // 세로축 기본 45~55kg (범위를 벗어나는 값이 있으면 자동 확장)
+  const yMin=Math.min(45,Math.floor(Math.min(...vals,target))),yMax=Math.max(55,Math.ceil(Math.max(...vals,target)));
+  const iw=W-pL-pR,tx=i=>pL+(i/(n-1))*iw,ty=v=>pT+((yMax-v)/(yMax-yMin))*(H-pT-pB);
   const pts=data.map((d,i)=>`${tx(i)},${ty(d.v)}`).join(" ");
   const minI=vals.indexOf(Math.min(...vals)),maxI=vals.indexOf(Math.max(...vals));
-  const showLbl=i=>n<=10||i===0||i===n-1||i===minI||i===maxI;
-  const r=n<=15?4:n<=40?3:2,sw=n<=40?2.5:2;
+  // 1kg 간격 가로선 + 눈금 숫자
+  let grid="";
+  for(let k=yMin;k<=yMax;k++){
+    grid+=`<line x1="${pL}" y1="${ty(k)}" x2="${W-pR}" y2="${ty(k)}" stroke="#dce7f0" stroke-width="1" opacity="${k%5===0?.9:.55}"/><text x="${pL-5}" y="${ty(k)+3}" font-size="9" fill="#a8bfcc" text-anchor="end">${k}</text>`;
+  }
+  // 라벨 후보: ①처음/마지막/최고/최저 ②변곡점(변동 큰 순) ③데이터가 적으면 나머지
+  const thr=Math.max(.3,(Math.max(...vals)-Math.min(...vals))*.1);
+  const pivots=findPivots(vals,thr).filter(i=>![0,n-1,minI,maxI].includes(i));
+  const swing=i=>Math.max(i>0?Math.abs(vals[i]-vals[i-1]):0,i<n-1?Math.abs(vals[i]-vals[i+1]):0);
+  pivots.sort((a,b)=>swing(b)-swing(a));
+  const cand=[...new Set([maxI,minI,n-1,0])];
+  pivots.forEach(i=>cand.push(i));
+  if(n<=14)for(let i=0;i<n;i++)if(!cand.includes(i))cand.push(i);
+  // 아래쪽(골)/위쪽(봉우리) 라벨 위치 결정
+  const isLow=i=>{
+    if(i===minI)return true;if(i===maxI)return false;
+    const a=i>0?vals[i-1]:null,b=i<n-1?vals[i+1]:null;
+    if(a!==null&&b!==null)return vals[i]<a&&vals[i]<b;
+    const nb=a!==null?a:b;return vals[i]<nb;
+  };
+  // 겹치지 않게 순서대로 배치
+  const placed=[];
+  cand.forEach(i=>{
+    const x=tx(i),low=isLow(i),y=ty(vals[i])+(low?15:-8);
+    if(placed.some(p=>Math.abs(p.x-x)<26&&Math.abs(p.y-y)<12))return;
+    placed.push({x,y,i});
+  });
+  const r=n<=15?4:n<=40?3:2.5,sw=n<=40?2.5:2;
+  const hl=i=>i===minI||i===maxI;
   let xi=[];
   if(n<=5)xi=data.map((_,i)=>i);else{for(let k=0;k<5;k++)xi.push(Math.round(k*(n-1)/4));xi=[...new Set(xi)];}
-  svg.setAttribute("width",W);
-  svg.innerHTML=`<line x1="${pL}" y1="${tyy}" x2="${W-pR}" y2="${tyy}" stroke="#6baa9f" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>
-    <text x="${pL-3}" y="${tyy-4}" font-size="9" fill="#6baa9f" text-anchor="end">목표</text>
+  svg.setAttribute("width",W);svg.setAttribute("height",H);
+  svg.innerHTML=`${grid}
+    <line x1="${pL}" y1="${ty(target)}" x2="${W-pR}" y2="${ty(target)}" stroke="#6baa9f" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="${W-pR}" y="${ty(target)-4}" font-size="9" fill="#6baa9f" text-anchor="end" font-weight="700">목표 ${target}</text>
     <polyline points="${pts}" fill="none" stroke="#7c9cbf" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>
-    ${data.map((d,i)=>`<circle cx="${tx(i)}" cy="${ty(d.v)}" r="${r}" fill="#7c9cbf"/>${showLbl(i)?`<text x="${tx(i)}" y="${ty(d.v)-8}" font-size="10" fill="#7c9cbf" text-anchor="middle" font-weight="700">${d.v}</text>`:""}`).join("")}
+    ${data.map((d,i)=>`<circle cx="${tx(i)}" cy="${ty(d.v)}" r="${hl(i)?r+1.5:r}" fill="${i===minI?"#6baa9f":i===maxI?"#c4748a":"#7c9cbf"}"/>`).join("")}
+    ${placed.map(p=>`<text x="${p.x}" y="${p.y}" font-size="10" fill="${p.i===minI?"#4f8f84":p.i===maxI?"#b0576f":"#5a7a9e"}" text-anchor="middle" font-weight="700" stroke="#fff" stroke-width="3" paint-order="stroke">${vals[p.i]}</text>`).join("")}
     ${xi.map(i=>`<text x="${tx(i)}" y="${H-4}" font-size="9" fill="#a8bfcc" text-anchor="middle">${fd(data[i].date)}</text>`).join("")}`;
 }
 
